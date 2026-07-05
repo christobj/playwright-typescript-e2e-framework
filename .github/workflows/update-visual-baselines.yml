@@ -2,6 +2,17 @@ name: Update Visual Baselines
 
 on:
   workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to (re)generate baselines for'
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - chromium
+          - firefox
+          - webkit
 
 permissions:
   contents: write
@@ -26,13 +37,13 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps ${{ github.event.inputs.browser != 'all' && github.event.inputs.browser || '' }}
 
       - name: Copy environment file
         run: cp .env.example .env
 
       - name: Regenerate visual baselines
-        run: npx playwright test e2e/tests/specs/visual.spec.ts --update-snapshots
+        run: npx playwright test e2e/tests/specs/visual.spec.ts --update-snapshots ${{ github.event.inputs.browser != 'all' && format('--project={0}', github.event.inputs.browser) || '' }}
 
       - name: Show snapshot diff status
         run: |
