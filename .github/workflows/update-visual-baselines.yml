@@ -34,6 +34,13 @@ jobs:
       - name: Regenerate visual baselines
         run: npx playwright test e2e/tests/specs/visual.spec.ts --update-snapshots
 
+      - name: Show snapshot diff status
+        run: |
+          echo "## Snapshot git status" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          git status --porcelain -- e2e/tests/specs | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
       - name: Open PR with updated baselines
         uses: peter-evans/create-pull-request@v6
         with:
@@ -47,4 +54,3 @@ jobs:
             `@visual` is still excluded from the main E2E workflow, remove the
             `--grep-invert "@visual"` filter there so visual regression runs on every push/PR.
           branch: chore/update-visual-baselines
-          add-paths: e2e/tests/specs/**/*-snapshots/**
