@@ -88,13 +88,9 @@ npm run test:visual:update    # (re)generate baselines
 
 **Important:** screenshots are pixel comparisons tied to the OS + browser they were taken on — Playwright encodes that into the filename (e.g. `home-chromium-darwin.png` locally on macOS vs. `home-chromium-linux.png` on CI's `ubuntu-latest`), so baselines for both can coexist in the same `*-snapshots/` folder without conflict.
 
-This repo currently only has macOS (`-darwin`) baselines, generated locally. To get CI-valid (`-linux`) baselines:
+CI-valid (`-linux`) baselines are generated via **Actions → Update Visual Baselines → Run workflow** (`.github/workflows/update-visual-baselines.yml`). It runs on `ubuntu-latest` — the same OS as the main E2E workflow — regenerates snapshots, and opens a PR with the resulting `*-linux.png` files for review. It takes a `browser` input (`all` / `chromium` / `firefox` / `webkit`, default `all`) so you only install and audit the browser(s) you actually need instead of always downloading all three.
 
-1. Go to **Actions → Update Visual Baselines → Run workflow** (`.github/workflows/update-visual-baselines.yml`). It runs on `ubuntu-latest` — the same OS as the main E2E workflow — regenerates snapshots, and opens a PR with the resulting `*-linux.png` files.
-2. Review the diffed images and merge that PR.
-3. Remove the `--grep-invert "@visual"` filter from `.github/workflows/e2e-tests.yml`'s `Run Playwright tests` step so `@visual` runs on every push/PR.
-
-Re-run that workflow (and re-remove/re-add the filter isn't needed) any time you intentionally change the UI — it'll open a fresh PR with updated baselines.
+Re-run that workflow (no other changes needed) any time you intentionally change the UI — it'll open a fresh PR with updated baselines.
 
 ## ☁️ BrowserStack Cross-Browser (scaffold)
 
@@ -129,7 +125,7 @@ npm run report:open
 
 ## ✅ CI/CD (GitHub Actions)
 
-`.github/workflows/e2e-tests.yml` runs the suite on every push/PR to `main`, once daily at 03:00 UTC, and on manual dispatch with a browser choice. A `Type check` step (`tsc --noEmit`) runs before the tests. The HTML report (with traces and screenshots on failure) is uploaded as a build artifact on every run, pass or fail. Tests tagged `@visual` are excluded (`--grep-invert "@visual"`) until OS-matched baselines are committed — see [Visual Regression](#-visual-regression).
+`.github/workflows/e2e-tests.yml` runs the suite on every push/PR to `main`, once daily at 03:00 UTC, and on manual dispatch with a browser choice. A `Type check` step (`tsc --noEmit`) runs before the tests. The HTML report (with traces and screenshots on failure) is uploaded as a build artifact on every run, pass or fail. `@visual` runs alongside everything else now that Linux-matched baselines are committed — see [Visual Regression](#-visual-regression).
 
 ## 🏷️ Test Tags
 

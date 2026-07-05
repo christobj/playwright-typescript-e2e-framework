@@ -47,10 +47,7 @@ jobs:
         run: npm run typecheck
 
       - name: Run Playwright tests
-        # @visual is excluded: its baselines must be generated against the same OS/browser
-        # combination as this runner (see README's Visual Regression section) before it can
-        # run here without failing on the first, baseline-less execution.
-        run: npx playwright test --project=${{ github.event.inputs.browser || 'chromium' }} --grep-invert "@visual"
+        run: npx playwright test --project=${{ github.event.inputs.browser || 'chromium' }}
 
       - name: Upload test report
         if: always()
