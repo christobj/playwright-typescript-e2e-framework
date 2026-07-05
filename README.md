@@ -10,7 +10,10 @@ End-to-end test automation framework built with pure **Playwright + TypeScript**
 
 - **Playwright** (`@playwright/test`) — browser automation and test runner
 - **TypeScript** — test scripting language, `strict` mode
-- **`@playwright/test`'s own `expect()`** — web-first, auto-retrying assertions
+- **`@playwright/test`'s own `expect()`** — web-first, auto-retrying assertions, incl. `toHaveScreenshot()` for visual regression
+- **`@axe-core/playwright`** — accessibility scanning (WCAG 2.0/2.1 A & AA)
+- **`playwright-lighthouse`** — Lighthouse performance/SEO/best-practices audits
+- **`browserstack-node-sdk`** — cross-browser/device cloud runs (scaffolded, see below)
 - **ESLint (`typescript-eslint`) & Prettier** — linting and formatting
 - **Husky** — git hooks
 
@@ -22,9 +25,11 @@ e2e/
     components/         # Shared UI components (e.g. header/nav)
     utils/               # Test data generation
     pages/               # Page objects
+    helpers/             # Accessibility & Lighthouse audit helpers
     specs/               # *.spec.ts test files
     support/             # Custom fixtures + shared auth helper
 .github/workflows/       # CI pipeline (GitHub Actions)
+browserstack.yml          # BrowserStack cross-browser scaffold (see below)
 .env.example             # Committed template for local .env
 tsconfig.json             # TypeScript compiler config
 playwright.config.ts      # Playwright projects/reporter config
@@ -54,13 +59,62 @@ npm run test:debug          # Playwright inspector
 
 Browser selection uses Playwright's native `--project` flag (see `playwright.config.ts`).
 
+## ♿ Accessibility Testing
+
+`e2e/tests/helpers/accessibility.helper.ts` wraps `@axe-core/playwright`, scanning against WCAG 2.0/2.1 A & AA tags. `e2e/tests/specs/accessibility.spec.ts` scans the home, products, and cart pages and fails on any `critical`/`serious` violation (moderate/minor are attached to the test report, not enforced, to avoid noise from third-party ad content on this site).
+
+```bash
+npm run test:accessibility
+```
+
+## ⚡ Performance Testing (Lighthouse)
+
+`e2e/tests/helpers/lighthouse.helper.ts` launches a dedicated Chromium instance over CDP and runs a Lighthouse audit via `playwright-lighthouse`. `e2e/tests/specs/performance.spec.ts` audits the home and products pages against the thresholds in that helper. Lighthouse requires Chromium's DevTools Protocol, so this spec skips automatically on firefox/webkit projects.
+
+```bash
+npm run test:performance
+```
+
+Thresholds are intentionally conservative (`performance: 40`) since automationexercise.com is a public demo site with third-party ad content outside this framework's control — tune `PERFORMANCE_THRESHOLDS` in the helper if you point this at a different target.
+
+## 🎨 Visual Regression
+
+`e2e/tests/specs/visual.spec.ts` uses Playwright's built-in `expect(page).toHaveScreenshot()` for the home, products, and cart pages (`maxDiffPixelRatio: 0.02` tolerance, set in `playwright.config.ts`, to absorb minor ad/carousel drift).
+
+```bash
+npm run test:visual           # compare against committed baselines
+npm run test:visual:update    # (re)generate baselines
+```
+
+**Important:** screenshots are pixel comparisons tied to the OS + browser they were taken on — Playwright encodes that into the filename (e.g. `home-chromium-darwin.png` locally on macOS vs. `home-chromium-linux.png` on CI's `ubuntu-latest`), so baselines for both can coexist in the same `*-snapshots/` folder without conflict.
+
+This repo currently only has macOS (`-darwin`) baselines, generated locally. To get CI-valid (`-linux`) baselines:
+
+1. Go to **Actions → Update Visual Baselines → Run workflow** (`.github/workflows/update-visual-baselines.yml`). It runs on `ubuntu-latest` — the same OS as the main E2E workflow — regenerates snapshots, and opens a PR with the resulting `*-linux.png` files.
+2. Review the diffed images and merge that PR.
+3. Remove the `--grep-invert "@visual"` filter from `.github/workflows/e2e-tests.yml`'s `Run Playwright tests` step so `@visual` runs on every push/PR.
+
+Re-run that workflow (and re-remove/re-add the filter isn't needed) any time you intentionally change the UI — it'll open a fresh PR with updated baselines.
+
+## ☁️ BrowserStack Cross-Browser (scaffold)
+
+`browserstack.yml` scaffolds a BrowserStack device/browser matrix (Windows Chrome, macOS Safari, iPhone) via `browserstack-node-sdk`. **This is not wired to a live account** — add `BROWSERSTACK_USERNAME` / `BROWSERSTACK_ACCESS_KEY` to your `.env` first:
+
+```bash
+npm run test:browserstack
+```
+
 ## 🌍 Environment Configuration
 
-Single `.env` file, no multi-brand/multi-market setup, since this targets one public site:
+No multi-brand/multi-market setup, since this targets one public site:
 
 ```
 BASE_URL=https://automationexercise.com
 HEADLESS=true
+
+# BrowserStack (optional, see above)
+BROWSERSTACK_USERNAME=
+BROWSERSTACK_ACCESS_KEY=
 ```
 
 `.env` is gitignored; `.env.example` is committed as the template.
@@ -75,7 +129,11 @@ npm run report:open
 
 ## ✅ CI/CD (GitHub Actions)
 
-`.github/workflows/e2e-tests.yml` runs the suite on every push/PR to `main`, once daily at 03:00 UTC, and on manual dispatch with a browser choice. A `Type check` step (`tsc --noEmit`) runs before the tests. The HTML report (with traces and screenshots on failure) is uploaded as a build artifact on every run, pass or fail.
+`.github/workflows/e2e-tests.yml` runs the suite on every push/PR to `main`, once daily at 03:00 UTC, and on manual dispatch with a browser choice. A `Type check` step (`tsc --noEmit`) runs before the tests. The HTML report (with traces and screenshots on failure) is uploaded as a build artifact on every run, pass or fail. Tests tagged `@visual` are excluded (`--grep-invert "@visual"`) until OS-matched baselines are committed — see [Visual Regression](#-visual-regression).
+
+## 🏷️ Test Tags
+
+`accessibility.spec.ts`, `performance.spec.ts`, and `visual.spec.ts` tag their `describe` blocks (`@accessibility`, `@performance`, `@visual`) so they can be included/excluded via Playwright's `--grep` / `--grep-invert`, e.g. `npx playwright test --grep "@accessibility|@performance"`.
 
 ## 🌿 Branching Strategy (GitHub Flow)
 
