@@ -5,6 +5,9 @@ export default defineConfig({
   testDir: 'e2e/tests/specs',
   retries: 1,
   reporter: 'html',
+  expect: {
+    toHaveScreenshot: { maxDiffPixelRatio: 0.02, animations: 'disabled' },
+  },
   use: {
     baseURL: process.env.BASE_URL || 'https://automationexercise.com',
     headless: process.env.HEADLESS !== 'false',

@@ -13,6 +13,11 @@
     "test:webkit": "playwright test --project=webkit",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
+    "test:accessibility": "playwright test e2e/tests/specs/accessibility.spec.ts",
+    "test:performance": "playwright test e2e/tests/specs/performance.spec.ts --project=chromium",
+    "test:visual": "playwright test e2e/tests/specs/visual.spec.ts",
+    "test:visual:update": "playwright test e2e/tests/specs/visual.spec.ts --update-snapshots",
+    "test:browserstack": "npx browserstack-node-sdk playwright test --project=chromium",
     "report:open": "playwright show-report",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -34,12 +39,16 @@
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.17.0",
     "@faker-js/faker": "^9.3.0",
     "@types/node": "^22.10.2",
+    "browserstack-node-sdk": "^1.61.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.1.7",
+    "lighthouse": "^13.4.0",
+    "playwright-lighthouse": "^4.0.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.19.0"
