@@ -12,5 +12,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
+  {
+    files: ['.claude/hooks/**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly' },
+    },
+  },
   eslintConfigPrettier
 );
